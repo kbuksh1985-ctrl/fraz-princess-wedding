@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Send Invitations · Fraz weds Princess</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#3d0a15">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cinzel:wght@500;700&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Host-only page: write a guest's name, get their personal invitation link, send it on WhatsApp. */
+:root{--maroon:#5a0f1e;--maroon-2:#3d0a15;--gold:#c49a43;--gold-2:#f3dc9c;--ivory:#fffaf0;--ink:#3a2418;--muted:#8a6a55;--ok:#2f7a3d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cormorant Garamond',Georgia,serif;color:var(--ink);min-height:100vh;
+  background:radial-gradient(circle at 50% 0%,#8e1b2e 0%,#5a0f1e 40%,#2a0710 100%) fixed;
+  padding:28px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:480px;margin:0 auto}
+header{text-align:center;color:var(--gold-2);margin-bottom:18px}
+header .names{font-family:'Parisienne',cursive;font-size:44px;line-height:1.1;
+  background:linear-gradient(100deg,#c49a43,#fff3c9 50%,#c49a43);-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.3em;opacity:.85;margin-top:4px}
+.panel{background:var(--ivory);border-radius:16px;padding:20px 18px;box-shadow:0 14px 34px rgba(0,0,0,.35);border:1px solid rgba(196,154,67,.5)}
+.panel + .panel{margin-top:16px}
+h2{font-family:'Cinzel',serif;font-size:15px;letter-spacing:.12em;color:var(--maroon);margin-bottom:4px}
+.help{font-size:15px;color:var(--muted);margin-bottom:12px;line-height:1.4}
+label{display:block;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;color:var(--muted);margin:10px 0 6px}
+input,textarea{width:100%;font:inherit;font-size:18px;color:var(--ink);padding:11px 13px;border:1px solid #e3cfa6;border-radius:10px;background:#fff;outline:none}
+input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(196,154,67,.2)}
+textarea{min-height:110px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button,.btn{font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 16px;border-radius:24px;cursor:pointer;
+  border:1.5px solid var(--maroon);background:#fff;color:var(--maroon);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.solid,.btn.solid{background:var(--maroon);color:#fff}
+.btn.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
+button:focus-visible,.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.result{display:none;margin-top:14px;padding:12px;border-radius:12px;background:#fbf3e4;border:1px dashed var(--gold)}
+.result.show{display:block}
+.result .link{font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--maroon)}
+.err{color:#b3261e;font-size:14px;margin-top:6px;display:none}
+.list{margin-top:10px}
+.item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #efe1c4;flex-wrap:wrap}
+.item .nm{flex:1;min-width:120px;font-size:18px;font-weight:600}
+.item .sent{font-size:12px;color:var(--ok);font-family:'Cinzel',serif}
+.item button,.item .btn{padding:7px 12px;font-size:11px}
+.empty{font-size:15px;color:var(--muted);font-style:italic}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--maroon-2);color:#fff;
+  padding:10px 18px;border-radius:24px;font-size:15px;transition:.3s;pointer-events:none;border:1px solid var(--gold)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.preview{display:block;text-align:center;margin-top:16px;color:var(--gold-2);font-family:'Cinzel',serif;font-size:12px;letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="names">Fraz &amp; Princess</div>
+    <p>SEND INVITATIONS</p>
+  </header>
+
+  <section class="panel" aria-labelledby="oneTitle">
+    <h2 id="oneTitle">One guest</h2>
+    <p class="help">Write the guest's name. Their card will open with "Dear (name)" on the envelope and the first page.</p>
+    <label for="gName">Guest name</label>
+    <input id="gName" placeholder="e.g. Ali Khan & Family" autocomplete="off" maxlength="60">
+    <div class="err" id="gErr">Write a name first.</div>
+    <div class="row">
+      <button class="solid" type="button" id="make">Create link</button>
+    </div>
+    <div class="result" id="result">
+      <div class="link" id="link"></div>
+      <div class="row">
+        <a class="btn wa" id="wa" target="_blank" rel="noopener">WhatsApp</a>
+        <button type="button" id="copy">Copy message</button>
+        <a class="btn" id="open" target="_blank" rel="noopener">Preview</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="manyTitle">
+    <h2 id="manyTitle">Many guests</h2>
+    <p class="help">One name per line. Each guest gets their own link and button.</p>
+    <label for="many">Guest names</label>
+    <textarea id="many" placeholder="Ali Khan & Family&#10;Ayesha Ahmed&#10;Uncle Tariq"></textarea>
+    <div class="row"><button class="solid" type="button" id="makeMany">Create all links</button></div>
+    <div class="list" id="list"><p class="empty">Your guest list will appear here.</p></div>
+  </section>
+
+  <a class="preview" href="index.html" target="_blank" rel="noopener">Open the card without a name →</a>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const COUPLE = "Fraz & Princess";
+const base = new URL("index.html", location.href).href;
+const linkFor = n => base + "?to=" + encodeURIComponent(n.trim());
+const msgFor = n => `Assalam o Alaikum ${n.trim()}! 💌\nYou are warmly invited to the wedding of ${COUPLE}.\nOpen your invitation: ${linkFor(n)}`;
+const waFor = n => "https://wa.me/?text=" + encodeURIComponent(msgFor(n));
+const $ = id => document.getElementById(id);
+
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2000); }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("Copied ✓"); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); toast("Copied ✓"); } catch (_) { toast("Select the link and copy it"); } ta.remove(); }
+}
+
+/* remember which guests were already sent (only on this phone/computer) */
+let sent = {};
+try { sent = JSON.parse(localStorage.getItem("fp-sent") || "{}"); } catch (e) {}
+const markSent = n => { sent[n] = Date.now(); try { localStorage.setItem("fp-sent", JSON.stringify(sent)); } catch (e) {} };
+
+/* one guest */
+function makeOne() {
+  const n = $("gName").value.trim();
+  $("gErr").style.display = n ? "none" : "block";
+  if (!n) { $("gName").focus(); return; }
+  $("link").textContent = linkFor(n);
+  $("wa").href = waFor(n); $("open").href = linkFor(n);
+  $("wa").onclick = () => { markSent(n); renderList(); };
+  $("copy").onclick = () => { copy(msgFor(n)); markSent(n); renderList(); };
+  $("result").classList.add("show");
+}
+$("make").addEventListener("click", makeOne);
+$("gName").addEventListener("keydown", e => { if (e.key === "Enter") makeOne(); });
+
+/* many guests */
+let names = [];
+try { names = JSON.parse(localStorage.getItem("fp-names") || "[]"); } catch (e) {}
+function renderList() {
+  const box = $("list");
+  if (!names.length) { box.innerHTML = '<p class="empty">Your guest list will appear here.</p>'; return; }
+  box.innerHTML = "";
+  names.forEach(n => {
+    const row = document.createElement("div"); row.className = "item";
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = n;
+    row.appendChild(nm);
+    if (sent[n]) { const s = document.createElement("span"); s.className = "sent"; s.textContent = "✓ SENT"; row.appendChild(s); }
+    const wa = document.createElement("a"); wa.className = "btn wa"; wa.textContent = "WhatsApp"; wa.target = "_blank"; wa.rel = "noopener"; wa.href = waFor(n);
+    wa.addEventListener("click", () => { markSent(n); setTimeout(renderList, 300); });
+    const cp = document.createElement("button"); cp.type = "button"; cp.textContent = "Copy";
+    cp.addEventListener("click", () => { copy(msgFor(n)); markSent(n); renderList(); });
+    const pv = document.createElement("a"); pv.className = "btn"; pv.textContent = "Preview"; pv.target = "_blank"; pv.rel = "noopener"; pv.href = linkFor(n);
+    row.append(wa, cp, pv); box.appendChild(row);
+  });
+}
+$("makeMany").addEventListener("click", () => {
+  const add = $("many").value.split("\n").map(s => s.trim()).filter(Boolean);
+  add.forEach(n => { if (!names.includes(n)) names.push(n); });
+  try { localStorage.setItem("fp-names", JSON.stringify(names)); } catch (e) {}
+  $("many").value = ""; renderList();
+});
+renderList();
+</script>
+</body>
+</html>
